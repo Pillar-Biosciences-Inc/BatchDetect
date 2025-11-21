@@ -15,7 +15,7 @@ You can install everything using pip:
 ```bash
 # Clone the repository
 git clone https://github.com/Pillar-Biosciences-Inc/BatchDetect.git
-cd StateCNV
+cd BatchDetect
 
 # Install dependencies and the package
 conda create -n batchdetect python=3.11
