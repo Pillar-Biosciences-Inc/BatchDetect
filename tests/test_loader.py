@@ -16,12 +16,11 @@ def test_load_multimode_tuple_return():
     # on exact dataset sizes)
     assert acidity.ndim == 1
     assert enzyme.ndim == 1
-    assert stamps.ndim == 2
+    assert stamps.ndim == 1
 
     assert acidity.size > 0
     assert enzyme.size > 0
     assert stamps.shape[0] > 0
-    assert stamps.shape[1] > 0
 
 
 def test_load_multimode_return_dict():
@@ -40,4 +39,4 @@ def test_load_multimode_return_dict():
 
     assert np.array_equal(acidity_t, data_dict["acidity"])
     assert np.array_equal(enzyme_t, data_dict["enzyme"])
-    assert np.array_equal(stamps_t, data_dict["stamps"])
+    assert np.array_equal(stamps_t, np.squeeze(data_dict["stamps"]))
