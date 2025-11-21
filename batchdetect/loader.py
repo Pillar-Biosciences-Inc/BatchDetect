@@ -33,8 +33,8 @@ def load_multimode(return_dict: bool = False):
         return {name: data[name] for name in data.files}
 
     # Or explicitly pick out what you want
-    acidity = data["acidity"]
-    enzyme = data["enzyme"]
-    stamps = data["stamps"]
+    acidity = np.squeeze(data["acidity"])
+    enzyme = np.squeeze(data["enzyme"])
+    stamps = np.squeeze(data["stamps"])
 
     return acidity, enzyme, stamps
