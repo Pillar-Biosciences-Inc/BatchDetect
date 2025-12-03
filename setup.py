@@ -14,8 +14,9 @@ setup(
         'scikit-learn',
         'scipy',
         'tqdm',
-        'cloudpickle',
+        'igraph',
         'matplotlib',
+        'leidenalg',
         'pytest',
     ],
     classifiers=[
