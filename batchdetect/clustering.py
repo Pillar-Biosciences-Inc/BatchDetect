@@ -1,7 +1,9 @@
 import numpy as np
 from scipy.cluster.hierarchy import fcluster, linkage
 from scipy.spatial.distance import squareform
-
+import igraph as ig
+import leidenalg
+from sklearn.cluster import KMeans,SpectralClustering
 
 def _check_corr_matrix(corr):
     """
@@ -88,10 +90,6 @@ def cluster_spectral_corr(
 
     S = np.exp(gamma * base)
 
-    S = np.exp(gamma * base)
-
-    from sklearn.cluster import SpectralClustering
-
     sc = SpectralClustering(
         n_clusters=n_clusters,
         affinity="precomputed",
@@ -135,15 +133,6 @@ def cluster_leiden_corr(
     labels : ndarray, shape (n_samples,)
         Community labels in {0, 1, ..., n_communities-1}.
     """
-    try:
-        import igraph as ig
-        import leidenalg
-    except ImportError as e:
-        raise ImportError(
-            "cluster_leiden_corr requires igraph and leidenalg. "
-            "Install with: pip install igraph leidenalg"
-        ) from e
-
     corr = _check_corr_matrix(corr)
     W = np.clip(corr, 0.0, None)
     n = W.shape[0]
@@ -227,7 +216,6 @@ def cluster_pca_kmeans_corr(
 
     components = vecs[:, :n_components]
 
-    from sklearn.cluster import KMeans
 
     km = KMeans(
         n_clusters=n_clusters,

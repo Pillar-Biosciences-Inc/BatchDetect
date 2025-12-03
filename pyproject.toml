@@ -18,9 +18,9 @@ dependencies = [
     "scikit-learn",
     "scipy",
     "tqdm",
-    "cloudpickle",
+    "igraph",
     "matplotlib",
-    "statsmodels",
+    "leidenalg",
 ]
 
 [project.optional-dependencies]
