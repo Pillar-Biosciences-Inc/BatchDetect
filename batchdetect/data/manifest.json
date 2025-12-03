@@ -1,0 +1,38 @@
+[
+  {
+    "name": "BR283_cross_lot_covs",
+    "npz": "BR283_cross_lot_covs.npz",
+    "n_samples": 27,
+    "n_features": 283,
+    "n_targets": 1,
+    "X_dtype": "int32",
+    "y_dtype": "int64",
+    "targets": [
+      "Label"
+    ]
+  },
+  {
+    "name": "Thal_cross_lot_covs",
+    "npz": "Thal_cross_lot_covs.npz",
+    "n_samples": 103,
+    "n_features": 120,
+    "n_targets": 1,
+    "X_dtype": "float32",
+    "y_dtype": "int64",
+    "targets": [
+      "Label"
+    ]
+  },
+  {
+    "name": "Essential_ffpe",
+    "npz": "Essential_ffpe.npz",
+    "n_samples": 33,
+    "n_features": 172,
+    "n_targets": 1,
+    "X_dtype": "int32",
+    "y_dtype": "int64",
+    "targets": [
+      "CFN010.NRAS.146"
+    ]
+  }
+]
