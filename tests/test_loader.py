@@ -1,6 +1,13 @@
 import numpy as np
+import pytest
 
-from batchdetect.loader import load_multimode
+from batchdetect.loader import (
+    load_br283_cross_lot_covs,
+    load_covariates,
+    load_essential_ffpe,
+    load_multimode,
+    load_thal_cross_lot_covs,
+)
 
 
 def test_load_multimode_tuple_return():
@@ -40,3 +47,75 @@ def test_load_multimode_return_dict():
     assert np.array_equal(acidity_t, data_dict["acidity"])
     assert np.array_equal(enzyme_t, data_dict["enzyme"])
     assert np.array_equal(stamps_t, np.squeeze(data_dict["stamps"]))
+
+
+def test_load_br283_cross_lot_covs():
+    # Test default return
+    X, y, sample_id, features, target_names = load_br283_cross_lot_covs()
+
+    assert isinstance(X, np.ndarray)
+    assert isinstance(y, np.ndarray)
+    assert isinstance(sample_id, np.ndarray)
+    assert isinstance(features, np.ndarray)
+    assert isinstance(target_names, np.ndarray)
+
+    assert X.ndim == 2
+    assert y.ndim == 2
+    assert X.shape[0] == y.shape[0] == sample_id.shape[0]
+    assert X.shape[1] == features.shape[0]
+    assert y.shape[1] == target_names.shape[0]
+
+
+def test_load_thal_cross_lot_covs():
+    # Test default return
+    X, y, sample_id, features, target_names = load_thal_cross_lot_covs()
+
+    assert isinstance(X, np.ndarray)
+    assert isinstance(y, np.ndarray)
+    assert isinstance(sample_id, np.ndarray)
+    assert isinstance(features, np.ndarray)
+    assert isinstance(target_names, np.ndarray)
+
+    assert X.ndim == 2
+    assert y.ndim == 2
+    assert X.shape[0] == y.shape[0] == sample_id.shape[0]
+    assert X.shape[1] == features.shape[0]
+    assert y.shape[1] == target_names.shape[0]
+
+
+def test_load_essential_ffpe():
+    # Test default return
+    X, y, sample_id, features, target_names = load_essential_ffpe()
+
+    assert isinstance(X, np.ndarray)
+    assert isinstance(y, np.ndarray)
+    assert isinstance(sample_id, np.ndarray)
+    assert isinstance(features, np.ndarray)
+    assert isinstance(target_names, np.ndarray)
+
+    assert X.ndim == 2
+    assert y.ndim == 2
+    assert X.shape[0] == y.shape[0] == sample_id.shape[0]
+    assert X.shape[1] == features.shape[0]
+    assert y.shape[1] == target_names.shape[0]
+
+
+def test_load_covariates():
+    # Test loading by name
+    for name in ["br283", "thal", "essential"]:
+        data = load_covariates(name)
+        assert len(data) == 5  # Default returns 5 items
+
+    # Test case insensitivity and variations
+    data = load_covariates("BR283_Cross_Lot_Covs")
+    assert len(data) == 5
+
+    # Test return_X_y=False
+    data_dict = load_covariates("br283", return_X_y=False)
+    assert isinstance(data_dict, dict)
+    assert "X" in data_dict
+    assert "y" in data_dict
+
+    # Test invalid name
+    with pytest.raises(ValueError, match="Unknown dataset name"):
+        load_covariates("invalid_name")
