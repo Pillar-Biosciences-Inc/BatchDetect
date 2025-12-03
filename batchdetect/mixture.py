@@ -1,8 +1,5 @@
 from typing import Any, Callable, Dict, Union
 
-from scipy.special import gammaln
-import numpy as np
-
 import numpy as np
 from scipy.special import gammaln
 
@@ -180,7 +177,13 @@ class HeavyMixture:
         if cd in ("hypsecant", "hyperbolic_secant", "sech"):
             cd = "hypsecant"
 
-        if cd not in ("laplace", "gaussian", "student_t", "gennorm", "hypsecant"):
+        if cd not in (
+            "laplace",
+            "gaussian",
+            "student_t",
+            "gennorm",
+            "hypsecant",
+        ):
             raise ValueError(
                 "Unsupported component_distribution {!r}. "
                 "Expected one of: 'laplace', 'gaussian', 'normal', "
@@ -235,11 +238,15 @@ class HeavyMixture:
         if cd == "laplace":
             # Average L1 deviation from component mean
             l1 = np.abs(diffs).sum(axis=2)
-            scales = np.maximum(self.reg_b, np.mean(l1, axis=0) / n_features_float)
+            scales = np.maximum(
+                self.reg_b, np.mean(l1, axis=0) / n_features_float
+            )
         elif cd in ("gaussian", "student_t", "hypsecant"):
             # Use average L2 distance to define initial sigma
             l2_sq = np.sum(diffs * diffs, axis=2)
-            var = np.maximum(self.reg_b ** 2, np.mean(l2_sq, axis=0) / n_features_float)
+            var = np.maximum(
+                self.reg_b**2, np.mean(l2_sq, axis=0) / n_features_float
+            )
             scales = np.sqrt(var)
         elif cd == "gennorm":
             beta = self.gennorm_beta
@@ -247,10 +254,12 @@ class HeavyMixture:
             # Average |x - mu|^beta per feature
             m_beta = np.mean(abs_beta.sum(axis=2) / n_features_float, axis=0)
             # From E|Z|^beta = alpha^beta / beta => alpha^beta = beta * E|Z|^beta
-            alpha_beta = np.maximum(self.reg_b ** beta, beta * m_beta)
+            alpha_beta = np.maximum(self.reg_b**beta, beta * m_beta)
             scales = alpha_beta ** (1.0 / beta)
         else:
-            raise RuntimeError("Unexpected component_distribution in initialization.")
+            raise RuntimeError(
+                "Unexpected component_distribution in initialization."
+            )
 
         return weights, means, scales
 
@@ -265,13 +274,15 @@ class HeavyMixture:
         if cd == "laplace":
             # Laplace with L1 norm
             l1 = np.abs(diffs).sum(axis=2)  # (n_samples, K)
-            log_norm = -n_features * (np.log(2.0) + np.log(self.scales_))  # (K,)
+            log_norm = -n_features * (
+                np.log(2.0) + np.log(self.scales_)
+            )  # (K,)
             return log_norm[None, :] - l1 / self.scales_[None, :]
 
         if cd == "gaussian":
             # Gaussian with isotropic sigma
             l2_sq = np.sum(diffs * diffs, axis=2)
-            var = self.scales_ ** 2  # (K,)
+            var = self.scales_**2  # (K,)
             log_norm = -0.5 * n_features * (np.log(2.0 * np.pi) + np.log(var))
             return log_norm[None, :] - 0.5 * l2_sq / var[None, :]
 
@@ -279,7 +290,7 @@ class HeavyMixture:
             # Multivariate isotropic Student-t with df = t_df
             nu = float(self.t_df)
             l2_sq = np.sum(diffs * diffs, axis=2)
-            s2 = self.scales_ ** 2  # (K,)
+            s2 = self.scales_**2  # (K,)
 
             # Normalization constant:
             # log C = gammaln((nu + d)/2) - gammaln(nu/2)
@@ -302,13 +313,17 @@ class HeavyMixture:
             abs_diff_beta = np.abs(diffs) ** beta  # (n_samples, K, d)
             # sum over features of (|x - mu| / alpha)^beta
             # = sum_j |x_j - mu_j|^beta / alpha^beta
-            alpha_beta = self.scales_ ** beta  # (K,)
-            r_beta = abs_diff_beta.sum(axis=2) / alpha_beta[None, :]  # (n_samples, K)
+            alpha_beta = self.scales_**beta  # (K,)
+            r_beta = (
+                abs_diff_beta.sum(axis=2) / alpha_beta[None, :]
+            )  # (n_samples, K)
 
             # log normalizing constant per dimension:
             # 1D: log f = log(beta) - log(2 * alpha) - log(Gamma(1 / beta)) - (|x|/alpha)^beta
             # d dims independent => multiply constants by d
-            log_const_1d = np.log(beta) - np.log(2.0 * self.scales_) - gammaln(1.0 / beta)
+            log_const_1d = (
+                np.log(beta) - np.log(2.0 * self.scales_) - gammaln(1.0 / beta)
+            )
             log_const = n_features * log_const_1d  # (K,)
             return log_const[None, :] - r_beta
 
@@ -323,12 +338,16 @@ class HeavyMixture:
             log_const = -n_features * np.log(2.0 * self.scales_)  # (K,)
             return log_const[None, :] + log_sech.sum(axis=2)
 
-        raise RuntimeError("Unexpected component_distribution in _estimate_log_prob.")
+        raise RuntimeError(
+            "Unexpected component_distribution in _estimate_log_prob."
+        )
 
     def _estimate_log_resp(self, X):
         log_prob = self._estimate_log_prob(X)  # (n_samples, K)
         log_prob_weighted = log_prob + np.log(self.weights_)[None, :]
-        log_prob_norm = self._logsumexp(log_prob_weighted, axis=1)  # (n_samples,)
+        log_prob_norm = self._logsumexp(
+            log_prob_weighted, axis=1
+        )  # (n_samples,)
         log_resp = log_prob_weighted - log_prob_norm[:, None]
         return log_resp, log_prob_norm.mean()
 
@@ -391,7 +410,9 @@ class HeavyMixture:
 
             # Precompute a global L1 scale as fallback
             l1_global = np.abs(X - global_median[None, :]).sum(axis=1)
-            global_scale = np.maximum(self.reg_b, np.mean(l1_global) / n_features_float)
+            global_scale = np.maximum(
+                self.reg_b, np.mean(l1_global) / n_features_float
+            )
 
             for k in range(K):
                 if nk[k] <= eps:
@@ -399,7 +420,8 @@ class HeavyMixture:
                 else:
                     scales[k] = np.maximum(
                         self.reg_b,
-                        np.sum(resp[:, k] * l1[:, k]) / (n_features_float * nk[k]),
+                        np.sum(resp[:, k] * l1[:, k])
+                        / (n_features_float * nk[k]),
                     )
 
         else:
@@ -411,7 +433,7 @@ class HeavyMixture:
             l2_sq_global = np.sum(diffs_global * diffs_global, axis=1)
             # global variance per feature (average over features)
             var_global = np.mean(l2_sq_global) / n_features_float
-            var_global = max(var_global, self.reg_b ** 2)
+            var_global = max(var_global, self.reg_b**2)
 
             if cd == "gaussian":
                 global_scale = np.sqrt(var_global)
@@ -426,11 +448,17 @@ class HeavyMixture:
             elif cd == "gennorm":
                 beta = float(self.gennorm_beta)
                 abs_beta_global = np.abs(diffs_global) ** beta
-                m_beta_global = np.mean(abs_beta_global)  # average over all dims
-                alpha_beta_global = max(self.reg_b ** beta, beta * m_beta_global)
+                m_beta_global = np.mean(
+                    abs_beta_global
+                )  # average over all dims
+                alpha_beta_global = max(
+                    self.reg_b**beta, beta * m_beta_global
+                )
                 global_scale = alpha_beta_global ** (1.0 / beta)
             else:
-                raise RuntimeError("Unexpected distribution in M-step global scale.")
+                raise RuntimeError(
+                    "Unexpected distribution in M-step global scale."
+                )
 
             for k in range(K):
                 w = resp[:, k]
@@ -448,7 +476,7 @@ class HeavyMixture:
                 if cd in ("gaussian", "student_t", "hypsecant"):
                     l2_sq_k = np.sum(diffs_k * diffs_k, axis=1)
                     var_k = np.sum(w * l2_sq_k) / (n_features_float * w_sum)
-                    var_k = max(var_k, self.reg_b ** 2)
+                    var_k = max(var_k, self.reg_b**2)
 
                     if cd == "gaussian":
                         scale_k = np.sqrt(var_k)
@@ -464,12 +492,16 @@ class HeavyMixture:
                     beta = float(self.gennorm_beta)
                     abs_beta_k = np.abs(diffs_k) ** beta
                     # Average |x - mu|^beta across samples and dimensions
-                    m_beta_k = np.sum(w[:, None] * abs_beta_k) / (w_sum * n_features_float)
-                    alpha_beta_k = max(self.reg_b ** beta, beta * m_beta_k)
+                    m_beta_k = np.sum(w[:, None] * abs_beta_k) / (
+                        w_sum * n_features_float
+                    )
+                    alpha_beta_k = max(self.reg_b**beta, beta * m_beta_k)
                     scale_k = alpha_beta_k ** (1.0 / beta)
                     scales[k] = max(self.reg_b, scale_k)
                 else:
-                    raise RuntimeError("Unexpected distribution in M-step loop.")
+                    raise RuntimeError(
+                        "Unexpected distribution in M-step loop."
+                    )
 
         return weights, means, scales
 
