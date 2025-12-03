@@ -62,17 +62,8 @@ def test_cluster_hierarchical_corr():
 
 
 def test_cluster_spectral_corr():
-    try:
-        import sklearn.cluster
-    except ImportError:
-        pytest.skip("sklearn not installed")
-    except ValueError:
-        pytest.skip("sklearn binary incompatibility")
-
     corr = np.array([[1.0, 0.9, 0.0], [0.9, 1.0, 0.0], [0.0, 0.0, 1.0]])
 
-    # We might need to mock sklearn if the environment is broken,
-    # but let's try running it first.
     try:
         labels = cluster_spectral_corr(corr, n_clusters=2, random_state=42)
     except ValueError as e:
@@ -86,12 +77,6 @@ def test_cluster_spectral_corr():
 
 
 def test_cluster_leiden_corr():
-    try:
-        import igraph
-        import leidenalg
-    except ImportError:
-        pytest.skip("igraph or leidenalg not installed")
-
     corr = np.array([[1.0, 0.9, 0.0], [0.9, 1.0, 0.0], [0.0, 0.0, 1.0]])
 
     labels = cluster_leiden_corr(corr, resolution=1.0)
@@ -102,13 +87,6 @@ def test_cluster_leiden_corr():
 
 
 def test_cluster_pca_kmeans_corr():
-    try:
-        import sklearn.cluster
-    except ImportError:
-        pytest.skip("sklearn not installed")
-    except ValueError:
-        pytest.skip("sklearn binary incompatibility")
-
     corr = np.array([[1.0, 0.9, 0.1], [0.9, 1.0, 0.1], [0.1, 0.1, 1.0]])
 
     try:

@@ -1,9 +1,10 @@
+import igraph as ig
+import leidenalg
 import numpy as np
 from scipy.cluster.hierarchy import fcluster, linkage
 from scipy.spatial.distance import squareform
-import igraph as ig
-import leidenalg
-from sklearn.cluster import KMeans,SpectralClustering
+from sklearn.cluster import KMeans, SpectralClustering
+
 
 def _check_corr_matrix(corr):
     """
@@ -215,7 +216,6 @@ def cluster_pca_kmeans_corr(
     components = vecs[:, :n_components]
 
     components = vecs[:, :n_components]
-
 
     km = KMeans(
         n_clusters=n_clusters,
