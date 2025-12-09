@@ -440,7 +440,9 @@ def select_n_components(
 
         if criterion == "cv":
             # For CV, we need a factory that creates models with this K
-            factory_k = lambda: model_factory(k)
+            def factory_k():
+                return model_factory(k)
+
             score, _ = compute_cv_likelihood(
                 X, factory_k, n_folds=n_folds, random_state=random_state
             )
@@ -666,7 +668,6 @@ class DirichletProcessMixture:
 
         kappa_n = kappa_0 + n
         nu_n = nu_0 + n
-        mu_n = (kappa_0 * mu_0 + n * x_bar) / kappa_n
 
         diff_mu = x_bar - mu_0
         Psi_n = Psi_0 + S + (kappa_0 * n / kappa_n) * np.outer(diff_mu, diff_mu)
@@ -1672,7 +1673,8 @@ def bayesian_model_comparison_bridge(
             print("=" * 50)
 
         # Create factory for this K
-        factory_k = lambda k=k: model_factory(k)
+        def factory_k(k=k):
+            return model_factory(k)
 
         # Run bridge sampling
         sampler = BridgeSampler(
