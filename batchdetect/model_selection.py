@@ -1118,9 +1118,13 @@ class OverfittedVariationalMixture:
                 )
 
                 # M-step
-                alpha, means, covs, precisions, log_det_precisions = (
-                    self._m_step(X, resp)
-                )
+                (
+                    alpha,
+                    means,
+                    covs,
+                    precisions,
+                    log_det_precisions,
+                ) = self._m_step(X, resp)
 
                 # Compute ELBO
                 new_elbo = self._compute_elbo(
