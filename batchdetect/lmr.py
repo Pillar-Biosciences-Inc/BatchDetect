@@ -5,13 +5,13 @@ from scipy.integrate import quad
 
 from .mixture import HeavyMixture
 
+
 @dataclass
 class LMRResult:
     lr: float  # raw LR = 2*(ll_alt - ll_null)
     lmr_lr: float  # adjusted LMR statistic
     df: int  # parameter count difference
     p_value: float  # LMR p-value
-
 
 
 def _pack_params(model: HeavyMixture) -> np.ndarray:
@@ -61,7 +61,9 @@ def _set_params_inplace(model: HeavyMixture, theta: np.ndarray):
     model.scales_ = scales
 
 
-def _logprob_per_sample(model: HeavyMixture, theta: np.ndarray, X: np.ndarray) -> np.ndarray:
+def _logprob_per_sample(
+    model: HeavyMixture, theta: np.ndarray, X: np.ndarray
+) -> np.ndarray:
     """
     Return per-sample log p(x_i | theta). Mutates model parameters.
     """
@@ -69,7 +71,9 @@ def _logprob_per_sample(model: HeavyMixture, theta: np.ndarray, X: np.ndarray) -
     return model.score_samples(X)
 
 
-def _score_matrix_fd(model: HeavyMixture, theta: np.ndarray, X: np.ndarray, fd_eps: float) -> np.ndarray:
+def _score_matrix_fd(
+    model: HeavyMixture, theta: np.ndarray, X: np.ndarray, fd_eps: float
+) -> np.ndarray:
     """
     Per-sample score vectors via central finite differences:
       S[i, j] = d/dtheta_j log p(x_i | theta)
@@ -99,7 +103,9 @@ def _score_matrix_fd(model: HeavyMixture, theta: np.ndarray, X: np.ndarray, fd_e
     return S
 
 
-def _hessian_avg_loglik_fd(model: HeavyMixture, theta: np.ndarray, X: np.ndarray, fd_eps: float) -> np.ndarray:
+def _hessian_avg_loglik_fd(
+    model: HeavyMixture, theta: np.ndarray, X: np.ndarray, fd_eps: float
+) -> np.ndarray:
     """
     Hessian of average log-likelihood L(theta) = mean_i log p(x_i | theta)
     via central second differences.
@@ -135,10 +141,14 @@ def _hessian_avg_loglik_fd(model: HeavyMixture, theta: np.ndarray, X: np.ndarray
             tmp = theta.copy()
             tmm = theta.copy()
 
-            tpp[i] += eps[i]; tpp[j] += eps[j]
-            tpm[i] += eps[i]; tpm[j] -= eps[j]
-            tmp[i] -= eps[i]; tmp[j] += eps[j]
-            tmm[i] -= eps[i]; tmm[j] -= eps[j]
+            tpp[i] += eps[i]
+            tpp[j] += eps[j]
+            tpm[i] += eps[i]
+            tpm[j] -= eps[j]
+            tmp[i] -= eps[i]
+            tmp[j] += eps[j]
+            tmm[i] -= eps[i]
+            tmm[j] -= eps[j]
 
             Lpp = L(tpp)
             Lpm = L(tpm)
@@ -154,7 +164,9 @@ def _hessian_avg_loglik_fd(model: HeavyMixture, theta: np.ndarray, X: np.ndarray
     return H
 
 
-def _imhof_cdf_weighted_chisq(y: float, lambdas: np.ndarray, eps: float = 1e-7) -> float:
+def _imhof_cdf_weighted_chisq(
+    y: float, lambdas: np.ndarray, eps: float = 1e-7
+) -> float:
     """
     Imhof inversion for Q = sum_i lambda_i * chi2_1, return P(Q < y).
 
@@ -227,13 +239,20 @@ def lmr_test_heavymixture(
     if X.ndim == 1:
         X = X[:, None]
     n = X.shape[0]
-    d = X.shape[1]
 
     fit_kwargs = {} if fit_kwargs is None else dict(fit_kwargs)
 
     # Fit models
-    null_model = HeavyMixture(n_components=L, component_distribution=component_distribution, **fit_kwargs)
-    alt_model = HeavyMixture(n_components=K, component_distribution=component_distribution, **fit_kwargs)
+    null_model = HeavyMixture(
+        n_components=L,
+        component_distribution=component_distribution,
+        **fit_kwargs,
+    )
+    alt_model = HeavyMixture(
+        n_components=K,
+        component_distribution=component_distribution,
+        **fit_kwargs,
+    )
 
     if random_state is not None:
         # HeavyMixture uses np.random.default_rng internally in sample(), not fit(),
@@ -258,8 +277,16 @@ def lmr_test_heavymixture(
     df = p - q
 
     # Save and restore original fitted params to avoid side effects outside this function
-    alt_backup = (alt_model.weights_.copy(), alt_model.means_.copy(), alt_model.scales_.copy())
-    nul_backup = (null_model.weights_.copy(), null_model.means_.copy(), null_model.scales_.copy())
+    alt_backup = (
+        alt_model.weights_.copy(),
+        alt_model.means_.copy(),
+        alt_model.scales_.copy(),
+    )
+    nul_backup = (
+        null_model.weights_.copy(),
+        null_model.means_.copy(),
+        null_model.scales_.copy(),
+    )
 
     try:
         # Scores (per-sample gradients)
@@ -283,8 +310,8 @@ def lmr_test_heavymixture(
         # W block matrix (LMR/Vuong)
         W11 = -Bf @ Af_inv
         W12 = -Bfg @ Ag_inv
-        W21 =  Bgf @ Af_inv
-        W22 =  Bg @ Ag_inv
+        W21 = Bgf @ Af_inv
+        W22 = Bg @ Ag_inv
         W = np.block([[W11, W12], [W21, W22]])
 
         eig = np.linalg.eigvals(W)
@@ -303,9 +330,13 @@ def lmr_test_heavymixture(
         cdf = _imhof_cdf_weighted_chisq(lmr_lr, lambdas, eps=imhof_eps)
         p_value = float(1.0 - cdf)
 
-        return LMRResult(lr=float(lr), lmr_lr=float(lmr_lr), df=int(df), p_value=float(p_value))
+        return LMRResult(
+            lr=float(lr),
+            lmr_lr=float(lmr_lr),
+            df=int(df),
+            p_value=float(p_value),
+        )
 
     finally:
         alt_model.weights_, alt_model.means_, alt_model.scales_ = alt_backup
         null_model.weights_, null_model.means_, null_model.scales_ = nul_backup
-

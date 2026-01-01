@@ -14,9 +14,9 @@ def _get_lmr_callable():
     Adjust the name list if your public API differs.
     """
     for name in (
-        "lmr_test_heavymixture",          # recommended
-        "lmr_test_num_components",        # acceptable fallback
-        "lmr_test",                       # generic fallback
+        "lmr_test_heavymixture",  # recommended
+        "lmr_test_num_components",  # acceptable fallback
+        "lmr_test",  # generic fallback
     ):
         fn = getattr(lmr_mod, name, None)
         if callable(fn):
@@ -95,11 +95,15 @@ def _sample_null(rng, n, d, dist, *, loc=0.0, scale=1.0):
     return X
 
 
-def _sample_alt_two_comp(rng, n, d, dist, *, w0=0.5, m0=-3.0, m1=3.0, s0=1.0, s1=1.0):
+def _sample_alt_two_comp(
+    rng, n, d, dist, *, w0=0.5, m0=-3.0, m1=3.0, s0=1.0, s1=1.0
+):
     oracle = _oracle_mixture(
         dist=dist,
         weights=[float(w0), 1.0 - float(w0)],
-        means=np.vstack([np.full((1, d), float(m0)), np.full((1, d), float(m1))]),
+        means=np.vstack(
+            [np.full((1, d), float(m0)), np.full((1, d), float(m1))]
+        ),
         scales=[float(s0), float(s1)],
         random_state=rng.integers(0, 2**31 - 1),
     )
@@ -132,7 +136,9 @@ def test_api_returns_lmrresult_fields(fit_kwargs):
     rng = np.random.default_rng(1)
     X = _sample_null(rng, n=400, d=1, dist="laplace")
 
-    res = _call_lmr(fn, X, L=1, K=2, dist="laplace", correction=True, fit_kwargs=fit_kwargs)
+    res = _call_lmr(
+        fn, X, L=1, K=2, dist="laplace", correction=True, fit_kwargs=fit_kwargs
+    )
 
     assert hasattr(res, "lr")
     assert hasattr(res, "lmr_lr")
@@ -185,8 +191,18 @@ def test_correction_reduces_statistic(fit_kwargs):
     rng = np.random.default_rng(5)
     X = _sample_alt_two_comp(rng, n=500, d=1, dist="gaussian", m0=-2.0, m1=2.0)
 
-    res_corr = _call_lmr(fn, X, L=1, K=2, dist="gaussian", correction=True, fit_kwargs=fit_kwargs)
-    res_raw = _call_lmr(fn, X, L=1, K=2, dist="gaussian", correction=False, fit_kwargs=fit_kwargs)
+    res_corr = _call_lmr(
+        fn, X, L=1, K=2, dist="gaussian", correction=True, fit_kwargs=fit_kwargs
+    )
+    res_raw = _call_lmr(
+        fn,
+        X,
+        L=1,
+        K=2,
+        dist="gaussian",
+        correction=False,
+        fit_kwargs=fit_kwargs,
+    )
 
     assert res_corr.lmr_lr <= res_raw.lmr_lr + 1e-12
     # If correction=False, lmr_lr should typically equal lr (depends on your API contract)
@@ -200,7 +216,9 @@ def test_permutation_invariance(fit_kwargs):
     perm = rng.permutation(X.shape[0])
 
     res1 = _call_lmr(fn, X, L=1, K=2, dist="laplace", fit_kwargs=fit_kwargs)
-    res2 = _call_lmr(fn, X[perm], L=1, K=2, dist="laplace", fit_kwargs=fit_kwargs)
+    res2 = _call_lmr(
+        fn, X[perm], L=1, K=2, dist="laplace", fit_kwargs=fit_kwargs
+    )
 
     # Allow small numeric variation due to EM and finite differences
     assert abs(res1.p_value - res2.p_value) < 5e-3
@@ -256,7 +274,9 @@ def test_alternative_gives_small_pvalues_laplace(fit_kwargs):
     n = 500
     pvals = []
     for _ in range(n_rep):
-        X = _sample_alt_two_comp(rng, n=n, d=1, dist="laplace", m0=-4.0, m1=4.0, s0=1.0, s1=1.0)
+        X = _sample_alt_two_comp(
+            rng, n=n, d=1, dist="laplace", m0=-4.0, m1=4.0, s0=1.0, s1=1.0
+        )
         res = _call_lmr(fn, X, L=1, K=2, dist="laplace", fit_kwargs=fit_kwargs)
         pvals.append(res.p_value)
 
@@ -273,7 +293,9 @@ def test_alternative_gives_small_pvalues_gaussian(fit_kwargs):
     n = 500
     pvals = []
     for _ in range(n_rep):
-        X = _sample_alt_two_comp(rng, n=n, d=1, dist="gaussian", m0=-3.5, m1=3.5, s0=1.0, s1=1.0)
+        X = _sample_alt_two_comp(
+            rng, n=n, d=1, dist="gaussian", m0=-3.5, m1=3.5, s0=1.0, s1=1.0
+        )
         res = _call_lmr(fn, X, L=1, K=2, dist="gaussian", fit_kwargs=fit_kwargs)
         pvals.append(res.p_value)
 
@@ -287,11 +309,19 @@ def test_power_increases_with_separation(fit_kwargs):
     rng = np.random.default_rng(30)
 
     n = 500
-    X_small = _sample_alt_two_comp(rng, n=n, d=1, dist="gaussian", m0=-1.5, m1=1.5, s0=1.0, s1=1.0)
-    X_large = _sample_alt_two_comp(rng, n=n, d=1, dist="gaussian", m0=-4.0, m1=4.0, s0=1.0, s1=1.0)
+    X_small = _sample_alt_two_comp(
+        rng, n=n, d=1, dist="gaussian", m0=-1.5, m1=1.5, s0=1.0, s1=1.0
+    )
+    X_large = _sample_alt_two_comp(
+        rng, n=n, d=1, dist="gaussian", m0=-4.0, m1=4.0, s0=1.0, s1=1.0
+    )
 
-    res_small = _call_lmr(fn, X_small, L=1, K=2, dist="gaussian", fit_kwargs=fit_kwargs)
-    res_large = _call_lmr(fn, X_large, L=1, K=2, dist="gaussian", fit_kwargs=fit_kwargs)
+    res_small = _call_lmr(
+        fn, X_small, L=1, K=2, dist="gaussian", fit_kwargs=fit_kwargs
+    )
+    res_large = _call_lmr(
+        fn, X_large, L=1, K=2, dist="gaussian", fit_kwargs=fit_kwargs
+    )
 
     assert res_large.p_value <= res_small.p_value + 1e-6
 
@@ -300,11 +330,18 @@ def test_power_increases_with_sample_size(fit_kwargs):
     fn = _get_lmr_callable()
     rng = np.random.default_rng(31)
 
-    X_n200 = _sample_alt_two_comp(rng, n=200, d=1, dist="laplace", m0=-3.0, m1=3.0, s0=1.0, s1=1.0)
-    X_n900 = _sample_alt_two_comp(rng, n=900, d=1, dist="laplace", m0=-3.0, m1=3.0, s0=1.0, s1=1.0)
+    X_n200 = _sample_alt_two_comp(
+        rng, n=200, d=1, dist="laplace", m0=-3.0, m1=3.0, s0=1.0, s1=1.0
+    )
+    X_n900 = _sample_alt_two_comp(
+        rng, n=900, d=1, dist="laplace", m0=-3.0, m1=3.0, s0=1.0, s1=1.0
+    )
 
-    res_n200 = _call_lmr(fn, X_n200, L=1, K=2, dist="laplace", fit_kwargs=fit_kwargs)
-    res_n900 = _call_lmr(fn, X_n900, L=1, K=2, dist="laplace", fit_kwargs=fit_kwargs)
+    res_n200 = _call_lmr(
+        fn, X_n200, L=1, K=2, dist="laplace", fit_kwargs=fit_kwargs
+    )
+    res_n900 = _call_lmr(
+        fn, X_n900, L=1, K=2, dist="laplace", fit_kwargs=fit_kwargs
+    )
 
     assert res_n900.p_value <= res_n200.p_value + 1e-6
-
