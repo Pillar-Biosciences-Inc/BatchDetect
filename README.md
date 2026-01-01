@@ -1,6 +1,16 @@
 # BatchDetect
 Detecting batch heterogeneity via likelihoods
 
+BatchDetect addresses the challenge of detecting batch effects and heterogeneity in datasets, particularly when sample sizes are small. Traditional asymptotic tests often fail in these regimes, leading to unreliable conclusions. The core philosophy of this package is to evaluate the distribution of sample likelihoods (or scores) to determine if they arise from a single homogeneous process or if there is evidence of multiple underlying clusters representing distinct batches.
+
+The methodology relies on fitting "Heavy Mixture" models—supporting robust distributions like Laplace and Student-t—to the data. We explicitly test the hypothesis of a single component ($K=1$) versus two components ($K=2$). To ensure statistical rigor even with limited data, we employ a parametric bootstrap likelihood ratio test (`parametric_bootstrap_lrt`), which constructs a null distribution by resampling. Additionally, the package includes methods for clustering on correlation matrices (using hierarchical, spectral, or Leiden algorithms) to identify potential batch structures before formal testing.
+
+## Repository Structure
+
+- `batchdetect/`: Contains the main source code for the package, including mixture models, model selection, and clustering algorithms.
+- `tests/`: Contains the comprehensive unit test suite to ensure meaningful coverage and correctness.
+- `paper/`: Includes all specific code, notebooks, and experiments associated with the accompanying publication for this repository.
+
 ## Installation
 
 ### 🔧 Requirements
