@@ -1,0 +1,6 @@
+Gennorm
+INFO: Posterior mean a_hat = 0.6206 (95% CI: 0.5814, 0.6609)
+INFO: Count(p < 0.05) = 107 / 935; Clopper-Pearson upper = 0.1366
+INFO: alpha_posterior_credible_interval(...) = (np.float64(0.5816916786016764), np.float64(0.6611842740486578))
+INFO: Saved p-values to Computed_pvals2_lmr.txt
+INFO: Saved figure to Figure2_synthetic_lmr.pdf
