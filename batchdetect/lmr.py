@@ -211,7 +211,7 @@ def lmr_test_heavymixture(
     L: int,
     K: int,
     *,
-    component_distribution: str = "laplace",
+    component_distribution: str = "gennorm",
     fit_kwargs: dict | None = None,
     fd_eps: float = 1e-4,
     ridge_A: float = 1e-8,
