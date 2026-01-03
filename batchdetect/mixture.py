@@ -334,7 +334,9 @@ class HeavyMixture:
             s = self.scales_[None, None, :]  # (1, 1, K)
             u = (np.pi / 2.0) * diffs / s  # (n_samples, K, d)
             # log sech(u) = -log(cosh(u))
-            log_sech = -np.log(np.cosh(u))
+            absu = np.abs(u)
+            log_cosh = absu + np.log1p(np.exp(-2.0 * absu)) - np.log(2.0)
+            log_sech = -log_cosh
             log_const = -n_features * np.log(2.0 * self.scales_)  # (K,)
             return log_const[None, :] + log_sech.sum(axis=2)
 
