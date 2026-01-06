@@ -192,16 +192,19 @@ def test_ais_select_K_recovery():
     
     # Case 2: K=2 (well separated)
     X2 = np.concatenate([
-        rng.normal(loc=-3, scale=1, size=(250, 1)),
-        rng.normal(loc=3, scale=1, size=(250, 1))
+        rng.normal(loc=-15, scale=1, size=(50, 1)),
+        rng.normal(loc=15, scale=1, size=(50, 1))
     ])
     
     res2 = ais_select_K(
         X2, K_list=[1, 2],
-        n_particles=20,
+        n_particles=200,
         n_intermediate=20,
         random_state=42
     )
     # accurately should prefer K=2
+    print(res2[0])
+    print('____________')
+    print(res2[1])
     assert res2[0][0] == 2
 

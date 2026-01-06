@@ -2,13 +2,42 @@ import numpy as np
 from scipy.special import logsumexp
 
 
+
 def _logmeanexp(a):
+    """
+    Compute log(mean(exp(a))) in a numerically stable way.
+
+    Parameters
+    ----------
+    a : array_like
+        Input array.
+
+    Returns
+    -------
+    scalar
+        The log of the mean of the exponentials of the input elements.
+    """
     a = np.asarray(a, dtype=float)
     m = np.max(a)
     return m + np.log(np.mean(np.exp(a - m)))
 
 
 def _effective_sample_size_from_logw(logw):
+    """
+    Compute Effective Sample Size (ESS) from log-weights.
+
+    ESS = (sum w)^2 / sum w^2
+
+    Parameters
+    ----------
+    logw : array_like
+        Log-weights of particles.
+
+    Returns
+    -------
+    float
+        The effective sample size. Returns 0.0 if input is empty or sum of squared weights is 0.
+    """
     # ESS = (sum w)^2 / sum w^2 computed stably in log-space
     logw = np.asarray(logw, dtype=float)
     if logw.size == 0:
@@ -24,8 +53,25 @@ def _effective_sample_size_from_logw(logw):
 
 def _log_complete_likelihood_isotropic_gaussian(X, z, mus, taus):
     """
-    Complete-data log-likelihood: sum_n log N(x_n | mu_{z_n}, tau_{z_n}^{-1} I)
-    where tau is precision (1/sigma^2), isotropic per component.
+    Compute the complete-data log-likelihood for an isotropic Gaussian Mixture Model.
+
+    log p(X, z | mu, tau) = sum_n log N(x_n | mu_{z_n}, tau_{z_n}^{-1} I)
+
+    Parameters
+    ----------
+    X : array_like, shape (N, D)
+        Observed data.
+    z : array_like, shape (N,)
+        Component assignments.
+    mus : array_like, shape (K, D)
+        Component means.
+    taus : array_like, shape (K,)
+        Component precisions (1/variance).
+
+    Returns
+    -------
+    float
+        Total log-likelihood.
     """
     X = np.asarray(X, dtype=float)
     z = np.asarray(z, dtype=np.int64)
@@ -45,6 +91,26 @@ def _log_complete_likelihood_isotropic_gaussian(X, z, mus, taus):
 
 
 def _sample_dirichlet(rng, alpha):
+    """
+    Sample from a Dirichlet distribution, handling validity checks.
+
+    Parameters
+    ----------
+    rng : np.random.Generator
+        Random number generator instance.
+    alpha : array_like
+        Concentration parameters. Must be strictly positive.
+
+    Returns
+    -------
+    ndarray
+        Sampled probability vector summing to 1.
+
+    Raises
+    ------
+    ValueError
+        If any alpha <= 0.
+    """
     alpha = np.asarray(alpha, dtype=float)
     # np.random.Generator.dirichlet requires all alpha > 0
     if np.any(alpha <= 0):
@@ -54,11 +120,37 @@ def _sample_dirichlet(rng, alpha):
 
 def _sample_prior_state(rng, X, K, alpha0, m0, kappa0, a0, b0):
     """
-    Sample initial state from beta=0 distribution:
+    Sample initial state from the prior distribution (beta=0).
+
+    The model is:
       pi ~ Dir(alpha0)
-      tau_k ~ Gamma(a0,b0) (shape/rate)
+      tau_k ~ Gamma(a0, b0) (shape/rate parameterization)
       mu_k | tau_k ~ N(m0, (kappa0 * tau_k)^-1 I)
-      z_n | pi ~ Cat(pi)  (independent of X at beta=0)
+      z_n | pi ~ Cat(pi)
+
+    Parameters
+    ----------
+    rng : np.random.Generator
+        Random number generator.
+    X : array_like
+        Data (used for shape N, D only).
+    K : int
+        Number of components.
+    alpha0 : float
+        Dirichlet concentration parameter.
+    m0 : array_like
+        &Prior mean for component means.
+    kappa0 : float
+        Scaling factor for prior variance of means.
+    a0 : float
+        Gamma shape parameter for precision.
+    b0 : float
+        Gamma rate parameter for precision.
+
+    Returns
+    -------
+    tuple
+        (pi, mus, taus, z) sampled from the prior.
     """
     X = np.asarray(X, dtype=float)
     N, D = X.shape
@@ -81,8 +173,34 @@ def _gibbs_sweep_tempered(
     rng, X, pi, mus, taus, z, beta, alpha0, m0, kappa0, a0, b0
 ):
     """
-    One tempered Gibbs sweep targeting:
+    Perform one tempered Gibbs sampling sweep.
+
+    Targets the tempered posterior:
       f_beta(pi, mu, tau, z) ∝ p(pi) p(mu,tau) p(z|pi) [p(X|z,mu,tau)]^beta
+
+    Parameters
+    ----------
+    rng : np.random.Generator
+        Random number generator.
+    X : array_like
+        Observed data.
+    pi : array_like
+        Current mixture weights.
+    mus : array_like
+        Current component means.
+    taus : array_like
+        Current component precisions.
+    z : array_like
+        Current assignments.
+    beta : float
+        Inverse temperature (0 <= beta <= 1).
+    alpha0, m0, kappa0, a0, b0 : float
+        Hyperparameters.
+
+    Returns
+    -------
+    tuple
+        Updated (pi, mus, taus, z).
     """
     X = np.asarray(X, dtype=float)
     N, D = X.shape
@@ -177,21 +295,51 @@ def ais_log_evidence_isotropic_gmm(
     random_state=0,
 ):
     """
-    AIS estimate of log p(X | K) for Bayesian isotropic Gaussian mixture.
+    Estimate log-evidence log p(X | K) using Annealed Importance Sampling (AIS).
 
-    Priors:
-      pi ~ Dirichlet(alpha0 * 1_K)  [here alpha0 is per-component concentration]
-      tau_k ~ Gamma(a0, b0)         (shape/rate)
-      mu_k | tau_k ~ N(m0, (kappa0 * tau_k)^-1 I)
+    The model assumed is a Bayesian Isotropic Gaussian Mixture:
+       pi ~ Dirichlet(alpha0 * 1_K)
+       tau_k ~ Gamma(a0, b0)
+       mu_k | tau_k ~ N(m0, (kappa0 * tau_k)^-1 I)
 
-    Tempered targets:
-      f_beta(pi,mu,tau,z) ∝ p(pi)p(mu,tau)p(z|pi) [p(X|z,mu,tau)]^beta
+    The AIS path anneals from the prior (beta=0) to the posterior (beta=1).
 
-    Returns dict with:
-      - logZ_hat: AIS log-evidence estimate
-      - logw: per-particle log weights
-      - ess: effective sample size of weights
-      - betas: annealing schedule
+    Parameters
+    ----------
+    X : array_like, shape (N, D)
+        Observed data matrix.
+    K : int
+        Number of components to test.
+    n_particles : int, default=128
+        Number of AIS particles (chains).
+    n_intermediate : int, default=200
+        Number of annealing steps (beta distributions).
+    n_gibbs_sweeps_per_beta : int, default=1
+        Number of MCMC transitions per temperature step.
+    schedule_power : float, default=2.0
+        Power for the annealing schedule (beta_i = (i/T)^power).
+    alpha0 : float, default=1.0
+        Dirichlet concentration.
+    kappa0 : float, default=0.01
+        Prior mean precision scaling.
+    a0 : float, default=0.01
+        Gamma shape for precision.
+    b0 : float, default=0.01
+        Gamma rate for precision.
+    m0 : array_like or None
+        Prior mean for mu. If None, defaults to global mean of X.
+    random_state : int or None
+        Seed for reproducibility.
+
+    Returns
+    -------
+    dict
+        Results dictionary containing:
+        - "logZ_hat": float, estimated log evidence.
+        - "logw": array, shape (n_particles,), final log weights.
+        - "ess": float, effective sample size of the weights.
+        - "betas": array, annealing schedule used.
+        - "config": dict, input configuration.
     """
     X = np.asarray(X, dtype=float)
     if X.ndim != 2:
@@ -290,7 +438,25 @@ def ais_log_evidence_isotropic_gmm(
 
 def ais_select_K(X, K_list, **ais_kwargs):
     """
-    Run AIS for each K and return results sorted by logZ_hat (descending).
+    Perform Bayesian Model Selection for K (number of clusters) using AIS.
+
+    Runs `ais_log_evidence_isotropic_gmm` for each K in `K_list` and ranks them
+    by the estimated log-evidence.
+
+    Parameters
+    ----------
+    X : array_like, shape (N, D)
+        Observed data.
+    K_list : list of int
+        List of K values to test (e.g., [1, 2, 3]).
+    **ais_kwargs
+        Additional keyword arguments passed to `ais_log_evidence_isotropic_gmm`.
+
+    Returns
+    -------
+    list of tuples
+        Results sorted by logZ_hat descending. Each tuple is:
+        (K, logZ_hat, ess, res_dict)
     """
     results = []
     for K in K_list:
@@ -298,3 +464,4 @@ def ais_select_K(X, K_list, **ais_kwargs):
         results.append((K, r["logZ_hat"], r["ess"], r))
     results.sort(key=lambda t: t[1], reverse=True)
     return results
+
