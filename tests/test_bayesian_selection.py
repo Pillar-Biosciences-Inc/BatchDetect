@@ -1,13 +1,12 @@
 import numpy as np
-import pytest
 from scipy.special import logsumexp
 
 from batchdetect.bayesian_selection import (
-    _logmeanexp,
     _effective_sample_size_from_logw,
-    _log_complete_likelihood_isotropic_gaussian,
-    _sample_prior_state,
     _gibbs_sweep_tempered,
+    _log_complete_likelihood_isotropic_gaussian,
+    _logmeanexp,
+    _sample_prior_state,
     ais_log_evidence_isotropic_gmm,
     ais_select_K,
 )
@@ -172,43 +171,43 @@ def test_ais_select_K():
     assert isinstance(best_ess, float)
     assert isinstance(info, dict)
 
+
 def test_ais_select_K_recovery():
     # Test that AIS correctly identifies K=1 vs K=2 with more data
     rng = np.random.default_rng(42)
-    
+
     # Case 1: K=1
     X1 = rng.normal(loc=0, scale=1, size=(500, 1))
-    
+
     # Run with small n_particles/intermediate for speed, but enough for separation
     # 500 points is enough evidence.
     res1 = ais_select_K(
-        X1, K_list=[1, 2],
-        n_particles=20, 
-        n_intermediate=20,
-        random_state=42
+        X1, K_list=[1, 2], n_particles=20, n_intermediate=20, random_state=42
     )
     # accurately should prefer K=1
     assert res1[0][0] == 1
-    
+
     # Case 2: K=2 (well separated)
-    X2 = np.concatenate([
-        rng.normal(loc=-15, scale=1, size=(10, 1)),
-        rng.normal(loc=15, scale=1, size=(10, 1))
-    ])
-    
+    X2 = np.concatenate(
+        [
+            rng.normal(loc=-15, scale=1, size=(10, 1)),
+            rng.normal(loc=15, scale=1, size=(10, 1)),
+        ]
+    )
+
     res2 = ais_select_K(
-        X2, K_list=[1, 2],
+        X2,
+        K_list=[1, 2],
         n_particles=200,
         n_intermediate=20,
         a0=2.0,
         b0=2.0,
         alpha0=2.0,
         kappa0=0.5,
-        random_state=42
+        random_state=42,
     )
     # accurately should prefer K=2
     print(res2[0])
-    print('____________')
+    print("____________")
     print(res2[1])
     assert res2[0][0] == 2
-

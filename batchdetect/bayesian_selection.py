@@ -2,7 +2,6 @@ import numpy as np
 from scipy.special import logsumexp
 
 
-
 def _logmeanexp(a):
     """
     Compute log(mean(exp(a))) in a numerically stable way.
@@ -464,4 +463,3 @@ def ais_select_K(X, K_list, **ais_kwargs):
         results.append((K, r["logZ_hat"], r["ess"], r))
     results.sort(key=lambda t: t[1], reverse=True)
     return results
-
