@@ -4,8 +4,7 @@ echo '##           Gaussian Likelihood           ##'
 echo '#############################################'
 echo '#############################################'
 python Figure2Creation_LMR.py \
-  --pickle Likelihoods.p \
-  --pickle LogLikelihoods2.p \
+  --pickle Synthetic_Log_Likelihoods.p \
   --pvals-out Computed_pvals2_lmr_gaussian.txt \
   --figure-out Figure2_synthetic_lmr_gaussian.pdf \
   --cd gaussian
@@ -16,8 +15,7 @@ echo '##          Hypersecant Likelihood         ##'
 echo '#############################################'
 echo '#############################################'
 python Figure2Creation_LMR.py \
-  --pickle Likelihoods.p \
-  --pickle LogLikelihoods2.p \
+  --pickle Synthetic_Log_Likelihoods.p \
   --pvals-out Computed_pvals2_lmr_hs.txt \
   --figure-out Figure2_synthetic_lmr_hs.pdf \
   --cd hypsecant
@@ -28,8 +26,7 @@ echo '##          Student-t Likelihood         ##'
 echo '###########################################'
 echo '###########################################'
 python Figure2Creation_LMR.py \
-  --pickle Likelihoods.p \
-  --pickle LogLikelihoods2.p \
+  --pickle Synthetic_Log_Likelihoods.p \
   --pvals-out Computed_pvals2_lmr_st.txt \
   --figure-out Figure2_synthetic_lmr_st.pdf \
   --cd student_t
@@ -40,8 +37,7 @@ echo '##          Laplace Likelihood         ##'
 echo '#########################################'
 echo '#########################################'
 python Figure2Creation_LMR.py \
-  --pickle Likelihoods.p \
-  --pickle LogLikelihoods2.p \
+  --pickle Synthetic_Log_Likelihoods.p \
   --pvals-out Computed_pvals2_lmr_laplace.txt \
   --figure-out Figure2_synthetic_lmr_laplace.pdf \
   --cd laplace
@@ -52,8 +48,7 @@ echo '##          Gennorm Likelihood         ##'
 echo '#########################################'
 echo '#########################################'
 python Figure2Creation_LMR.py \
-  --pickle Likelihoods.p \
-  --pickle LogLikelihoods2.p \
+  --pickle Synthetic_Log_Likelihoods.p \
   --pvals-out Computed_pvals2_lmr_gn.txt \
   --figure-out Figure2_synthetic_lmr_gn.pdf \
   --cd gennorm
